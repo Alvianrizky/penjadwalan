@@ -33,11 +33,17 @@
                                     <div class="col-lg-6">
                                         <button type="button" class="btn btn-primary btn-sm" id="save"><i class="fas fa-save ml-2"></i> Save Jadwal</button>
                                         <button type="button" class="btn btn-danger btn-sm" onclick="delete_data()"><i class="fas fa-trash-alt ml-2"></i> Hapus Jadwal</button>
+                                        <button type="button" class="btn btn-info btn-sm" onclick="refresh_data()"><i class="fas fa-sync"></i> Refresh Jadwal</button>
                                     </div>
                                 </div>
                             </div>
                             <div class="table-responsive">
-                                <?php echo $hasil; ?>
+                                <div id="hasil"></div>
+                            </div>
+                            <div align="center">
+                                <div id='ajax-wait'>
+                                    <img alt='loading...' src='<?php echo base_url()?>/assets/animasi/Rolling-1s-84px.png' />
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -53,7 +59,30 @@
 
 <script type="text/javascript">
     var site_url = site_url() + 'generate/';
-    var kromosom = <?php echo json_encode($kromosom); ?>;
+
+    $(document).ajaxStart(function() {
+        $("#ajax-wait").css({
+            left: ($(window).width() - 32) / 2 + "px", // 32 = lebar gambar
+            top: ($(window).height() - 32) / 2 + "px", // 32 = tinggi gambar
+            display: "block"
+        })
+    }).ajaxComplete(function() {
+        $("#ajax-wait").fadeOut();
+    });
+    
+
+    $(document).ready(function() {
+        $.ajax({
+            url: site_url + 'table/',
+            cache: false,
+            type: "POST",
+            dataType: "json",
+            success: function(data) {
+
+                $('#hasil').html(data.hasil);
+            }
+        });
+    })
 
     $('#save').click(function() {
         $.ajax({
@@ -127,6 +156,20 @@
                 });
             },
             allowOutsideClick: false
+        });
+    }
+
+    function refresh_data() {
+        location.reload(true);
+        $.ajax({
+            url: site_url + 'table/',
+            cache: false,
+            type: "POST",
+            dataType: "json",
+            success: function(data) {
+
+                $('#hasil').html(data.hasil);
+            }
         });
     }
 </script>

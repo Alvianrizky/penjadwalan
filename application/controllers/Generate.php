@@ -127,6 +127,21 @@ class Generate extends CI_Controller {
 			redirect('auth/login', 'refresh');
 		}
 		
+		
+
+		$data['page_header']   = $this->page_header;
+		$data['panel_heading'] = 'Jadwal Hasil Generate';
+		$data['page']         = '';
+		$data['breadcrumb']         = 'Generate Jadwal';
+		// $data['hasil'] = $hasil;
+		// $data['kromosom'] = $jadwal['kromosom'];
+
+		$this->template->theme('table_v', $data);
+	}
+
+
+	public function table()
+	{
 		$hari = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
 		$jam = ['07.00', '07.50', '08.40', '09.30', '10.20', '11.10', '12.00', '13.00', '13.50', '14.40', '15.30', '16.20'];
 
@@ -327,14 +342,9 @@ class Generate extends CI_Controller {
 	
 		$hasil = $this->table->generate();
 
-		$data['page_header']   = $this->page_header;
-		$data['panel_heading'] = 'Jadwal Hasil Generate';
-		$data['page']         = '';
-		$data['breadcrumb']         = 'Generate Jadwal';
 		$data['hasil'] = $hasil;
-		$data['kromosom'] = $jadwal['kromosom'];
 
-		$this->template->theme('table_v', $data);
+		echo json_encode($data);
 	}
 
 	public function jadwal()
@@ -344,9 +354,14 @@ class Generate extends CI_Controller {
 		$hari = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
 		$ruang = $this->ruang->as_array()->get_all();
 
-		$hasil_mutasi = $this->fitnes_mutasi();
+		$hasil_mutasi = $this->generasi();
 
 		$max_fitnes = max($hasil_mutasi['fitnes']);
+
+		// echo "<pre>";
+		// print_r($max_fitnes);
+		// exit();
+
 		$search_index = array_search($max_fitnes, $hasil_mutasi['fitnes']);
 
 		$kromosom = $hasil_mutasi['kromosom'][$search_index];
@@ -490,11 +505,46 @@ class Generate extends CI_Controller {
 		return $data;
 	}
 
+
+
+
+
+	public function generasi()
+	{
+		$fitnes = [];
+		$kromosom = [];
+		for($j = 0; $j < 36; $j++) {
+			$hasil_mutasi = $this->fitnes_mutasi();
+			$max_fitnes = max($hasil_mutasi['fitnes']);
+			$search_index = array_search($max_fitnes, $hasil_mutasi['fitnes']);
+			$kromosom1 = $hasil_mutasi['kromosom'][$search_index];
+
+			$fitnes[] = $max_fitnes;
+			$kromosom[] = $kromosom1;
+		}
+
+		$data = [
+			'fitnes' => $fitnes,
+			'kromosom' => $kromosom
+		];
+
+		// echo "<pre>";
+		// print_r($data);
+
+		return $data;
+	}
+
+
+
+
+
+
 	public function fitnes_mutasi()
 	{
 		$jam = ['07.00', '07.50', '08.40', '09.30', '10.20', '11.10', '12.00', '13.00', '13.50', '14.40', '15.30', '16.20'];
 
 		$mutasi = $this->mutasi();
+		$total_pengampu = count($this->gabung());
 		
 		$kromosom = [];
 		$fitnes = [];
@@ -502,45 +552,47 @@ class Generate extends CI_Controller {
 
 			$jum = 0;
 			$gen = [];
-			for($j = 0; $j < $this->totalpengampu(); $j++) {
+			for($j = 0; $j < $total_pengampu; $j++) {
 				$gen_mutasi = $mutasi[$i][$j];
 				// $gen_pengampu = $this->pengampu->where('id', $gen_mutasi['idPengampu'])->get();
 
 				if(!empty($gen)) {
 					for($k = 0; $k < count($gen); $k++) {
-						$hari_data = $gen[$k]['Hari'];
-						$ruang_data = $gen[$k]['Ruang'];
-						$awal_index = array_search($gen[$k]['Mulai'], $jam);
-						$akhir_index = array_search($gen[$k]['Selesai'], $jam);
-						$mulai_index = array_search($gen_mutasi['Mulai'], $jam);
-						$selesai_index = array_search($gen_mutasi['Selesai'], $jam);
+						if(empty($gen[$k]['Nilai'])) {
+							$hari_data = $gen[$k]['Hari'];
+							$ruang_data = $gen[$k]['Ruang'];
+							$awal_index = array_search($gen[$k]['Mulai'], $jam);
+							$akhir_index = array_search($gen[$k]['Selesai'], $jam);
+							$mulai_index = array_search($gen_mutasi['Mulai'], $jam);
+							$selesai_index = array_search($gen_mutasi['Selesai'], $jam);
 
-						$waktu_range = range($awal_index, $akhir_index);
-						$count_waktu = count($waktu_range) - 1;
-						unset($waktu_range[$count_waktu]);
+							$waktu_range = range($awal_index, $akhir_index);
+							$count_waktu = count($waktu_range) - 1;
+							unset($waktu_range[$count_waktu]);
 
-						$rand_waktu_range = range($mulai_index, $selesai_index);
-						$count_rand = count($rand_waktu_range) - 1;
-						unset($rand_waktu_range[$count_rand]);
+							$rand_waktu_range = range($mulai_index, $selesai_index);
+							$count_rand = count($rand_waktu_range) - 1;
+							unset($rand_waktu_range[$count_rand]);
 
-						for ($m = 0; $m < count($rand_waktu_range); $m++) {
-							$index = $rand_waktu_range[$m];
-							if (in_array($index, $waktu_range)) {
-								$status = 'Ada';
-								break;
-							} else {
-								$status = 'Tidak Ada';
+							for ($m = 0; $m < count($rand_waktu_range); $m++) {
+								$index = $rand_waktu_range[$m];
+								if (in_array($index, $waktu_range)) {
+									$status = 'Ada';
+									break;
+								} else {
+									$status = 'Tidak Ada';
+								}
 							}
-						}
 
-						$cek_kelas = $this->cekkelas($gen[$k]['idKelas'], $gen_mutasi['idKelas']);
+							$cek_kelas = $this->cekkelas($gen[$k]['idKelas'], $gen_mutasi['idKelas']);
 
-						// $pengampu = $this->pengampu->where('id', $gen[$k]['idPengampu'])->get();
+							// $pengampu = $this->pengampu->where('id', $gen[$k]['idPengampu'])->get();
 
-						if ($gen[$k]['idDosen'] == $gen_mutasi['idDosen'] && $ruang_data == $gen_mutasi['Ruang'] && $hari_data == $gen_mutasi['Hari'] && $status == 'Ada' || $cek_kelas == 'Ada' && $hari_data == $gen_mutasi['Hari'] && $status == 'Ada' || $gen[$k]['idDosen'] == $gen_mutasi['idDosen'] && $hari_data == $gen_mutasi['Hari'] && $status == 'Ada' || $hari_data == $gen_mutasi['Hari'] && $status == 'Ada' && $ruang_data == $gen_mutasi['Ruang']) {
-							$gen_mutasi['Nilai'] = 10;
-							$jum = $jum + 10;
-						break;
+							if ($gen[$k]['idDosen'] == $gen_mutasi['idDosen'] && $ruang_data == $gen_mutasi['Ruang'] && $hari_data == $gen_mutasi['Hari'] && $status == 'Ada' || $cek_kelas == 'Ada' && $hari_data == $gen_mutasi['Hari'] && $status == 'Ada' || $gen[$k]['idDosen'] == $gen_mutasi['idDosen'] && $hari_data == $gen_mutasi['Hari'] && $status == 'Ada' || $hari_data == $gen_mutasi['Hari'] && $status == 'Ada' && $ruang_data == $gen_mutasi['Ruang']) {
+								$gen_mutasi['Nilai'] = 10;
+								$jum = $jum + 10;
+							break;
+							}
 						}
 					}
 				}
@@ -566,6 +618,9 @@ class Generate extends CI_Controller {
 			'kromosom' => $kromosom
 		];
 
+		// echo "<pre>";
+		// print_r($data);
+
 		return $data;
 	}
 
@@ -575,8 +630,12 @@ class Generate extends CI_Controller {
 		$jam = ['07.00', '07.50', '08.40', '09.30', '10.20', '11.10', '12.00', '13.00', '13.50', '14.40', '15.30', '16.20'];
 		$hari = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
 
-		$pm = 0.1;
-		$total_gen = $this->totalpengampu() * $this->totalpengampu();
+		// $pm = 0.1;
+		$pm = 0.25;
+		// $total_pengampu = $this->totalpengampu();
+		$total_pengampu = count($this->gabung());
+		$total_populasi = $this->totalpengampu();
+		$total_gen = $total_pengampu * $total_populasi;
 		$jumlah_mutasi = $pm * $total_gen;
 
 		$crossover = $this->crossover();
@@ -585,12 +644,16 @@ class Generate extends CI_Controller {
 			$random[] = rand(1, $total_gen);
 		}
 
+		// echo "<pre>";
+		// print_r($random);
+		// exit();
+
 		$posisi = [];
-		for($j = 0; $j < $this->totalpengampu(); $j++) {
+		for($j = 0; $j < $total_pengampu; $j++) {
 			$angka = $random[$j];
-			if ($angka >= $this->totalpengampu()) {
-				$gen = ($angka % $this->totalpengampu()) == 0 ? 0 : (($angka % $this->totalpengampu()) - 1);
-				$kromosom = floor($angka / $this->totalpengampu());
+			if ($angka >= $total_pengampu) {
+				$gen = ($angka % $total_pengampu) == 0 ? 0 : (($angka % $total_pengampu) - 1);
+				$kromosom = floor($angka / $total_pengampu);
 			} else {
 				$gen = $angka - 1;
 				$kromosom = 0;
@@ -604,58 +667,69 @@ class Generate extends CI_Controller {
 			$posisi[] = $hasil_acak;
 		}
 
-		for($k = 0; $k < $this->totalpengampu(); $k++) {
+		// echo "<pre>";
+		// print_r($posisi);
+		// exit();
+
+		$slot_acak = [];
+		for($k = 0; $k < $total_pengampu; $k++) {
 			$gen_posisi = $posisi[$k]['gen'];
 			$kromosom = $posisi[$k]['kromosom'];
 
 			// $id = $crossover[$kromosom][$gen_posisi];
 			// $pengampu = $this->pengampu->where('id', $id)->get();
-			$pengampu = $crossover[$kromosom][$gen_posisi];
+			if(isset($crossover[$kromosom][$gen_posisi])) {
+				$pengampu = $crossover[$kromosom][$gen_posisi];
 
-			$makul = $this->makul->where('id', $pengampu['idMakul'])->get();
-			$dosen = $this->dosen->where('id', $pengampu['idDosen'])->get();
-			$gen = $this->ruang->gen($makul->jenis);
+				$makul = $this->makul->where('id', $pengampu['idMakul'])->get();
+				$dosen = $this->dosen->where('id', $pengampu['idDosen'])->get();
+				$gen = $this->ruang->gen($makul->jenis);
 
-			$ran_hari = array_rand($hari);
+				$ran_hari = array_rand($hari);
 
-			$random_waktu = array_rand($jam);
-			$slot = $jam[$random_waktu];
-			$awal = array_search($slot, $jam);
+				$random_waktu = array_rand($jam);
+				$slot = $jam[$random_waktu];
+				$awal = array_search($slot, $jam);
 
-			if ($makul->jumlahSks > 4) {
-				$jumlahsks = 3;
-			} else {
-				$jumlahsks = $makul->jumlahSks;
+				if ($makul->jumlahSks > 4) {
+					$jumlahsks = 3;
+				} else {
+					$jumlahsks = $makul->jumlahSks;
+				}
+
+				$akhir = $awal + $jumlahsks;
+
+				$cekwaktu = $this->cekwaktu($awal, $akhir);
+
+				if($ran_hari == 4 && $cekwaktu['Akhir'] == 6) {
+					$cekwaktu['Akhir'] = $cekwaktu['Akhir'] - 1;
+					$cekwaktu['Awal'] = $cekwaktu['Awal'] - 1;
+				}
+
+				$populasi_acak['id'] = $pengampu['id'];
+				$populasi_acak['idDosen'] = $pengampu['idDosen'];
+				$populasi_acak['idMakul'] = $pengampu['idMakul'];
+				$populasi_acak['idKelas'] = $pengampu['idKelas'];
+				$populasi_acak['Dosen'] = $dosen->namaDosen;
+				$populasi_acak['Hari'] = $hari[$ran_hari];
+				$populasi_acak['Mulai'] = $jam[$cekwaktu['Awal']];
+				$populasi_acak['Selesai'] = $jam[$cekwaktu['Akhir']];
+				$populasi_acak['Ruang'] = $gen[0]['namaRuang'];
+
+				$slot_acak[$kromosom][$gen_posisi] = $populasi_acak;
 			}
-
-			$akhir = $awal + $jumlahsks;
-
-			$cekwaktu = $this->cekwaktu($awal, $akhir);
-
-			if($ran_hari == 4 && $cekwaktu['Akhir'] == 6) {
-				$cekwaktu['Akhir'] = $cekwaktu['Akhir'] - 1;
-				$cekwaktu['Awal'] = $cekwaktu['Awal'] - 1;
-			}
-
-			$populasi_acak['id'] = $pengampu['id'];
-			$populasi_acak['idDosen'] = $pengampu['idDosen'];
-			$populasi_acak['idMakul'] = $pengampu['idMakul'];
-			$populasi_acak['idKelas'] = $pengampu['idKelas'];
-			$populasi_acak['Dosen'] = $dosen->namaDosen;
-			$populasi_acak['Hari'] = $hari[$ran_hari];
-			$populasi_acak['Mulai'] = $jam[$cekwaktu['Awal']];
-			$populasi_acak['Selesai'] = $jam[$cekwaktu['Akhir']];
-			$populasi_acak['Ruang'] = $gen[0]['namaRuang'];
-
-			$slot_acak[$kromosom][$gen_posisi] = $populasi_acak;
 		}
+
+		// echo "<pre>";
+		// print_r($slot_acak);
+		// exit();
 
 		
 		$mutasi = [];
 		for($l = 0; $l < $this->totalpengampu(); $l++) {
 			$search_kromosom = array_key_exists($l, $slot_acak);
 			if(!empty($search_kromosom)) {
-				for($m = 0; $m < $this->totalpengampu(); $m++) {
+				for($m = 0; $m < $total_pengampu; $m++) {
 					$search_gen = array_key_exists($m, $slot_acak[$l]);
 					if(!empty($search_gen)) {
 						$mutasi_gen[$m] = $slot_acak[$l][$m];
@@ -670,17 +744,8 @@ class Generate extends CI_Controller {
 			}
 		}
 
-
-		// echo "<pre>";
-		// print_r($random);
-		// echo "<pre>";
-		// print_r($posisi);
-		// echo "<pre>";
-		// print_r($slot_acak);
 		// echo "<pre>";
 		// print_r($mutasi);
-		// echo "<pre>";
-		// print_r($crossover[0]);
 
 		return $mutasi;
 	}
@@ -688,7 +753,8 @@ class Generate extends CI_Controller {
 
 	public function crossover()
 	{
-		$pc = 0.25;
+		// $pc = 0.25;
+		$pc = 0.15;
 		for($m = 0; $m < $this->totalpengampu(); $m++) {
 			$random = [];
 			for ($i = 0; $i < $this->totalpengampu(); $i++) {
@@ -707,6 +773,10 @@ class Generate extends CI_Controller {
 			break;
 			}
 		}
+
+		// echo "<pre>";
+		// print_r($kromosom_induk);
+		// exit();
 			
 		$parent = [];
 		$gen = [];
@@ -732,16 +802,21 @@ class Generate extends CI_Controller {
 			$parent[] = $gen;
 		}
 
+		// echo "<pre>";
+		// print_r($parent);
+		// exit();
+
 		$count_parent = count($parent);
+		$total_pengampu = count($this->gabung());
 		$kromosom = [];
 		$populasi = $this->wheel()['populasi'];
 		for($l = 0; $l < $count_parent; $l++) {
-			$acak = rand(0, 57);
+			$acak = rand(0, 41);
 			$index_induk1 = $parent[$l][0];
 			$index_induk2 = $parent[$l][1];
 
 			if ($count_induk % 2 == 0) {
-				for ($n = 0; $n < $this->totalpengampu(); $n++) {
+				for ($n = 0; $n < $total_pengampu; $n++) {
 					if ($n > $acak) {
 						$parent_pertama[$n] = $populasi[$index_induk2][$n];
 					} else {
@@ -749,7 +824,7 @@ class Generate extends CI_Controller {
 					}
 				}
 
-				for ($n = 0; $n < $this->totalpengampu(); $n++) {
+				for ($n = 0; $n < $total_pengampu; $n++) {
 					if ($n > $acak) {
 						$parent_kedua[$n] = $populasi[$index_induk1][$n];
 					} else {
@@ -762,7 +837,7 @@ class Generate extends CI_Controller {
 			} else {
 				
 				if(($count_parent - 1) == $l) {
-					for ($n = 0; $n < $this->totalpengampu(); $n++) {
+					for ($n = 0; $n < $total_pengampu; $n++) {
 						if ($n > $acak) {
 							$parent_akhir[] = $populasi[$index_induk1][$n];
 						} else {
@@ -773,7 +848,7 @@ class Generate extends CI_Controller {
 					$kromosom[$index_induk2] = $parent_akhir;			
 				}
 				else {
-					for ($n = 0; $n < $this->totalpengampu(); $n++) {
+					for ($n = 0; $n < $total_pengampu; $n++) {
 						if ($n > $acak) {
 							$parent_pertama[$n] = $populasi[$index_induk2][$n];
 						} else {
@@ -781,7 +856,7 @@ class Generate extends CI_Controller {
 						}
 					}
 
-					for ($n = 0; $n < $this->totalpengampu(); $n++) {
+					for ($n = 0; $n < $total_pengampu; $n++) {
 						if ($n > $acak) {
 							$parent_kedua[$n] = $populasi[$index_induk1][$n];
 						} else {
@@ -891,7 +966,7 @@ class Generate extends CI_Controller {
 
 		$data = [];
 		$jum = 0;
-		for ($i = 0; $i < $this->totalpengampu(); $i++) {
+		for ($i = 0; $i < count($gen_pengampu); $i++) {
 			$makul = $this->makul->where('id', $gen_pengampu[$i]['idMakul'])->get();
 			$dosen = $this->dosen->where('id', $gen_pengampu[$i]['idDosen'])->get();
 			$gen = $this->ruang->gen($makul->jenis);
@@ -956,8 +1031,6 @@ class Generate extends CI_Controller {
 
 					$cek_kelas = $this->cekkelas($data[$j]['idKelas'], $gen_pengampu[$i]['idKelas']);
 
-					// $pengampu = $this->pengampu->where('id', $data[$j]['id'])->get();
-
 					if($data[$j]['idDosen'] == $gen_pengampu[$i]['idDosen'] && $ruang_data == $gen[0]['namaRuang'] && $hari_data == $hari[$ran_hari] && $status_waktu == 'Ada' || $cek_kelas == 'Ada' && $hari_data == $hari[$ran_hari] && $status_waktu == 'Ada' || $data[$j]['idDosen'] == $gen_pengampu[$i]['idDosen'] && $hari_data == $hari[$ran_hari] && $status_waktu == 'Ada' || $hari_data == $hari[$ran_hari] && $status_waktu == 'Ada' && $ruang_data == $gen[0]['namaRuang']) {
 						// $data1['Nilai'] = 10;
 						$jum = $jum + 10;
@@ -978,6 +1051,9 @@ class Generate extends CI_Controller {
 		// print_r($jum);
 		// echo "<pre>";
 		// print_r($data);
+
+		// echo "<pre>";
+		// print_r($kromosom);
 
 		return $kromosom;
 	}
@@ -1018,7 +1094,8 @@ class Generate extends CI_Controller {
 	{
 		$gen_pengampu = $this->gabung();
 
-		$count = count($gen_pengampu);
+		// $count = count($gen_pengampu);
+		$count = 80;
 
 		return $count;
 	}
@@ -1144,5 +1221,32 @@ class Generate extends CI_Controller {
 
 		return $pengampu_hasil;
 	}
+
+	// public function cari_interval()
+	// {
+	// 	$array = [];
+	// 	for($j = 0; $j < 30; $j++) {
+	// 		$hasil_mutasi = $this->fitnes_mutasi();
+	// 		$max_fitnes = max($hasil_mutasi['fitnes']);
+
+	// 		$array[] = $max_fitnes;
+	// 	}
+
+	// 	$value = 0;
+	// 	$interval = 0;
+	// 	for ($i = 0; $i < count($array); $i++) {
+	// 		if($array[$i] > $value) {
+	// 			$value = $array[$i];
+				
+	// 			echo "<pre>";
+	// 			print_r('array['.$i.'] => '.$value.' interval '.($i - $interval));
+
+	// 			$interval = $i;
+	// 		}
+	// 	}
+
+	// 	echo "<pre>";
+	// 	print_r($array);
+	// }
 	
 }

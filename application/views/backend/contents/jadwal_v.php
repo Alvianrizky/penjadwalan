@@ -173,6 +173,8 @@
         });
     })
 
+    
+
     function delete_data() {
         Swal.fire({
             title: 'Apa anda yakin ?',

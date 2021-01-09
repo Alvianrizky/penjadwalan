@@ -26,13 +26,13 @@ class JadwalUmum extends CI_Controller {
 		$this->template->umum('jadwal_umum_v', $data);
 	}
 
-	public function table()
+	public function table($kromosom)
 	{
 		$hari = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
 		$jam = ['07.00', '07.50', '08.40', '09.30', '10.20', '11.10', '12.00', '13.00', '13.50', '14.40', '15.30', '16.20'];
 
 		$ruang = $this->ruang->as_array()->get_all();
-		$kromosom = $this->jadwal();
+		// $kromosom = $this->jadwal();
 
 		for ($j = 0; $j < (count($jam) - 1); $j++) {
 			$waktu[] = [$j, $j + 1];
@@ -260,61 +260,30 @@ class JadwalUmum extends CI_Controller {
 		echo json_encode($data);
 	}
 
+	public function view()
+	{
+		$x = $this->input->post('id');
+		
+		echo json_encode($x);
+	}
+
 	public function form_data()
 	{
-		$opt_hari = [
-			'Senin' => 'Senin',
-			'Selasa' => 'Selasa',
-			'Rabu' => 'Rabu',
-			'Kamis' => 'Kamis',
-			'Jumat' => 'Jumat'
-		];
-		$opt_sesi = [
-			'07.00 - 07.50' => '07.00 - 07.50',
-			'07.50 - 08.40' => '07.50 - 08.40',
-			'08.40 - 09.30' => '08.40 - 09.30',
-			'09.30 - 10.20' => '09.30 - 10.20',
-			'10.20 - 11.10' => '10.20 - 11.10',
-			'11.10 - 12.00' => '11.10 - 12.00',
-			'13.00 - 13.50' => '13.00 - 13.50',
-			'13.50 - 14.40' => '13.50 - 14.40',
-			'14.40 - 15.30' => '14.40 - 15.30',
-			'15.30 - 16.20' => '15.30 - 16.20'
-		];
-		$ruang = $this->ruang->as_array()->get_all();
+		$opt_dosen = $this->dosen->as_dropdown('namaDosen')->get_all();
+		$opt_kelas = $this->kelas->as_dropdown('namaKelas')->get_all();
 
-		$opt_ruang = [];
-		for($i = 0; $i < count($ruang); $i++) {
-			$opt_ruang[$ruang[$i]['namaRuang']] = $ruang[$i]['namaRuang'];
-		}
-		
+		$semuaDosen = [0 => 'Semua Dosen'];
+		$semuaKelas = [0 => 'Semua Kelas'];
 
-		$row = array();
-		if ($this->input->post('id')) {
-			$id      = $this->input->post('id');
-			$jadwal = $this->jadwal->where('idpengampu', $id)->get();
-			$query   = $this->pengampu
-				->with_dosen('fields:namaDosen')
-				->with_matakuliah('fields:namaMakul')
-				->where('id', $id)->get();
-			if ($query) {
-				$row = array(
-					'id'       => $query->id,
-					'idDosen' => $query->dosen->namaDosen,
-					'idMakul' => $query->matakuliah->namaMakul,
-				);
-			}
-			$row = (object) $row;
-		}
+		$opt_dosen = $semuaDosen + $opt_dosen;
+		$opt_kelas = $semuaKelas + $opt_kelas;
+
+		$dosen = $this->dosen->as_object()->get_all();
+		$kelas = $this->kelas->as_object()->get_all();
 
 		$data = array(
-			'hidden' => form_hidden('id', !empty($row->id) ? $row->id : ''),
-			'hari' => form_dropdown('hari', $opt_hari, !empty($jadwal->hari) ? $jadwal->hari : '', 'class="form-control chosen-select"'),
-			'sesi' => form_dropdown('sesi', $opt_sesi, !empty($jadwal->waktu) ? $jadwal->waktu : '', 'class="form-control chosen-select" onchange="cek(this.value, '. $row->id.')"'),
-			'idRuang' => form_dropdown('idRuang', $opt_ruang, !empty($jadwal->ruang) ? $jadwal->ruang : '', 'class="form-control chosen-select"'),
-			'idDosen' => form_input(array('name' => 'idDosen', 'id' => 'idDosen', 'class' => 'form-control', 'value' => !empty($row->idDosen) ? $row->idDosen : '')),
-			'idMakul' => form_input(array('name' => 'idMakul', 'id' => 'idMakul', 'class' => 'form-control', 'value' => !empty($row->idMakul) ? $row->idMakul : '')),
-			'waktu' => form_input(array('name' => 'waktu', 'id' => 'waktu', 'class' => 'form-control', 'value' => '')),
+			'dosen' => form_dropdown('dosen', $opt_dosen, !empty($dosen->id) ? $dosen->id : '', 'class="form-control chosen-select" id="filterdosen"'),
+			'kelas' => form_dropdown('kelas', $opt_kelas, !empty($kelas->id) ? $kelas->id : '', 'class="form-control chosen-select"'),
 		);
 
 		echo json_encode($data);
@@ -325,8 +294,68 @@ class JadwalUmum extends CI_Controller {
 		$in_waktu = ['07.00 - 07.50', '07.50 - 08.40', '08.40 - 09.30', '09.30 - 10.20', '10.20 - 11.10', '11.10 - 12.00', '12.00 - 13.00', '13.00 - 13.50', '13.50 - 14.40', '14.40 - 15.30', '15.30 - 16.20'];
 		$hari = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat'];
 
-		$jadwal = $this->jadwal->as_array()->get_all();
+		$jdw = $this->jadwal->as_array()->get_all();
 		$ruang = $this->ruang->as_array()->get_all();
+
+		// $this->input->post('idMakul')
+
+
+		$jadwal = [];
+		$idKelas = $this->input->post('kelas');
+		$idDosen = $this->input->post('dosen');
+		for($x = 0; $x < count($jdw); $x++) 
+		{
+			$search_array = strpos($jdw[$x]['idKelas'], ",");
+
+			if(empty($search_array)) {
+				$pisah = $jdw[$x]['idKelas'];
+			} else {
+				$pisah = explode(",", $jdw[$x]['idKelas']);
+			}
+
+			if(!empty($idKelas) && empty($idDosen)) 
+			{
+				if(is_array($pisah) == 1) {
+					if($pisah[0] == $idKelas) {
+						$jadwal[] = $jdw[$x];
+					} elseif($pisah[1] == $idKelas) {
+						$jadwal[] = $jdw[$x];
+					}
+				} else {
+					if($pisah == $idKelas) {
+						$jadwal[] = $jdw[$x];
+					}
+				}
+			} 
+			elseif(empty($idKelas) && !empty($idDosen)) 
+			{
+				if($jdw[$x]['idDosen'] == $idDosen) {
+					$jadwal[] = $jdw[$x];
+				}
+			} 
+			elseif(!empty($idKelas) && !empty($idDosen)) 
+			{
+				if(is_array($pisah) == 1) {
+					if($pisah[0] == $idKelas && $jdw[$x]['idDosen'] == $idDosen) {
+						$jadwal[] = $jdw[$x];
+					} elseif($pisah[1] == $idKelas && $jdw[$x]['idDosen'] == $idDosen) {
+						$jadwal[] = $jdw[$x];
+					}
+				} else {
+					if($pisah == $idKelas && $jdw[$x]['idDosen'] == $idDosen) {
+						$jadwal[] = $jdw[$x];
+					}
+				}
+			} 
+			elseif(empty($idKelas) && empty($idDosen)) 
+			{
+				$jadwal[] = $jdw[$x];
+			}
+		}
+
+		// echo "<pre>";
+		// print_r($jadwal);
+		// exit();
 
 		if(!empty($jadwal)) {
 			for ($i = 0; $i < count($hari); $i++) {
@@ -405,7 +434,7 @@ class JadwalUmum extends CI_Controller {
 		// echo "<pre>";
 		// print_r($hari_array);
 
-		return $hari_array;
+		return $this->table($hari_array);
 	}
 
 	public function cek()
