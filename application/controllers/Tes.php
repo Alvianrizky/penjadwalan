@@ -2,7 +2,7 @@
 
 defined('BASEPATH') OR exit('No direct script access allowed');
 
-class Generate extends CI_Controller {
+class Tes extends CI_Controller {
 
 	protected $page_header = 'Generate Jadwal';
 
@@ -618,8 +618,9 @@ class Generate extends CI_Controller {
 			'kromosom' => $kromosom
 		];
 
-		// echo "<pre>";
-		// print_r($data);
+		echo "================================fitnes_mutasi==========================================";
+		echo "<pre>";
+		print_r($data);
 
 		return $data;
 	}
@@ -667,8 +668,7 @@ class Generate extends CI_Controller {
 			$posisi[] = $hasil_acak;
 		}
 
-		// echo "<pre>";
-		// print_r($posisi);
+		
 		// exit();
 
 		$slot_acak = [];
@@ -720,8 +720,7 @@ class Generate extends CI_Controller {
 			}
 		}
 
-		// echo "<pre>";
-		// print_r($slot_acak);
+		
 		// exit();
 
 		
@@ -744,8 +743,15 @@ class Generate extends CI_Controller {
 			}
 		}
 
-		// echo "<pre>";
-		// print_r($mutasi);
+		echo "================================mutasi=================================================";
+		echo "<pre>";
+		print_r($random);
+		echo "<pre>";
+		print_r($posisi);
+		echo "<pre>";
+		print_r($slot_acak);
+		echo "<pre>";
+		print_r($mutasi);
 
 		return $mutasi;
 	}
@@ -774,6 +780,7 @@ class Generate extends CI_Controller {
 			}
 		}
 
+		
 		// echo "<pre>";
 		// print_r($kromosom_induk);
 		// exit();
@@ -871,6 +878,12 @@ class Generate extends CI_Controller {
 			
 		}
 
+		
+		// echo "================================crossover==============================================";
+		// echo "<pre>";
+		// print_r($kromosom);
+		// exit();
+
 		$crossover = [];
 		for ($i = 0; $i < $this->totalpengampu(); $i++) {
 			// $data = $x[$i];
@@ -882,6 +895,11 @@ class Generate extends CI_Controller {
 			}
 		}
 
+		// echo "================================crossover==============================================";
+		// echo "<pre>";
+		// print_r($kromosom_induk);
+		// echo "<pre>";
+		// print_r($parent);
 		// echo "<pre>";
 		// print_r($crossover);
 
@@ -927,6 +945,11 @@ class Generate extends CI_Controller {
 			'tot_fitnes' => $tot_fitnes_seleksi
 		];
 
+		// echo "================================wheel==================================================";
+		// echo "<pre>";
+		// print_r($prob);
+		// echo "<pre>";
+		// print_r($hasil_kumulatif);
 		// echo "<pre>";
 		// print_r($data);		
 
@@ -951,6 +974,7 @@ class Generate extends CI_Controller {
 			'tot_fitnes' => $jum
 		];
 
+		// echo "================================inisialisasi===========================================";
 		// echo "<pre>";
 		// print_r($data);
 
@@ -1052,6 +1076,7 @@ class Generate extends CI_Controller {
 		// echo "<pre>";
 		// print_r($data);
 
+		// echo "================================KROMOSOM1==============================================";
 		// echo "<pre>";
 		// print_r($kromosom);
 
@@ -1095,7 +1120,7 @@ class Generate extends CI_Controller {
 		$gen_pengampu = $this->gabung();
 
 		// $count = count($gen_pengampu);
-		$count = 80;
+		$count = 10;
 
 		return $count;
 	}
@@ -1210,6 +1235,11 @@ class Generate extends CI_Controller {
 			}
 		}
 
+		// $pengampu_testing = [];
+		// for($x = 0; $x < 10; $x++) {
+		// 	$pengampu_testing[] = $pengampu_hasil[$x];
+		// }
+
 
 
 		// echo "<pre>";
@@ -1218,6 +1248,9 @@ class Generate extends CI_Controller {
 		// print_r($pengampu_hasil);
 		// echo "<pre>";
 		// print_r($gabung_kelas);
+		// echo "<pre>";
+		// print_r($pengampu_testing);
+		
 
 		return $pengampu_hasil;
 	}
@@ -1258,6 +1291,17 @@ class Generate extends CI_Controller {
 
 		echo "<pre>";
 		print_r($hasil);
+	}
+
+	public function random()
+	{
+		$random = [];
+		for ($i = 0; $i < $this->totalpengampu(); $i++) {
+			$random[] = mt_rand(0.00, mt_getrandmax() - 1) / mt_getrandmax();
+		}
+
+		echo "<pre>";
+		print_r($random);
 	}
 
 	// public function cari_interval()
